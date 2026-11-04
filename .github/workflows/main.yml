@@ -1,3 +1,49 @@
-customer_app/android/app/google-services.json
-supplier_app/android/app/google-services.json
-admin_app/android/app/google-services.json
+name: Build AABs
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build Customer App
+        run: |
+          cd customer_app
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Build Supplier App
+        run: |
+          cd supplier_app
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Build Admin App
+        run: |
+          cd admin_app
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Upload AABs
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-aabs
+          path: |
+            customer_app/build/app/outputs/bundle/release/*.aab
+            supplier_app/build/app/outputs/bundle/release/*.aab
+            admin_app/build/app/outputs/bundle/release/*.aab
