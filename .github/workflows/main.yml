@@ -1,34 +1,16 @@
-name: Build
-on: [push]
+name: Build AABs
+on: { push: { branches: [ main ] } }
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with: { distribution: 'zulu', java-version: '17' }
       - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-      - name: Build APKs
-        run: |
-          for app in customer_app supplier_app admin_app; do
-            echo "Building $app"
-            cd $app
-            if [ ! -d android ]; then
-              flutter create /tmp/$app --platforms=android --project-name $app
-              cp -r /tmp/$app/android .
-              cp /tmp/$app/.metadata . 2>/dev/null || true
-            fi
-            flutter pub get
-            flutter build apk --release
-            cd ..
-            mkdir -p out
-            cp $app/build/app/outputs/flutter-apk/app-release.apk out/$app.apk
-          done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: apks
-          path: out/
+        with: { flutter-version: '3.19.0' }
+      - run: cd customer_app && flutter pub get && flutter build appbundle
+      - run: cd ../supplier_app && flutter pub get && flutter build appbundle
+      - run: cd ../admin_app && flutter pub get && flutter build appbundle
+      - uses: actions/upload-artifact@v3
+        with: { name: aabs, path: '**/build/app/outputs/bundle/release/*.aab' }
