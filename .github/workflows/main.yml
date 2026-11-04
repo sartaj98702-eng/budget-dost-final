@@ -12,20 +12,23 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Fix missing google-services
+      - name: Fix google-services
         run: |
           for app in customer_app supplier_app admin_app; do
+            PKG=$(grep -oP 'applicationId\s+"\K[^"]+' $app/android/app/build.gradle || grep -oP 'applicationId\s+\K\S+' $app/android/app/build.gradle.kts || echo "com.example.$app")
+            PKG=$(echo $PKG | tr -d '"')
+            echo "Making json for $app with package $PKG"
             mkdir -p $app/android/app
-            if [ ! -f $app/android/app/google-services.json ]; then
-              echo '{"project_info":{"project_number":"123","project_id":"dummy","storage_bucket":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:abc","android_client_info":{"package_name":"com.example"}},"oauth_client":[],"api_key":[{"current_key":"dummy"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}],"configuration_version":"1"}' > $app/android/app/google-services.json
-            fi
+            cat > $app/android/app/google-services.json <<EOF
+          {
+            "project_info": {"project_number": "123456", "project_id": "budget-dost", "storage_bucket": "budget-dost.appspot.com"},
+            "client": [{"client_info": {"mobilesdk_app_id": "1:123456:android:abcdef", "android_client_info": {"package_name": "$PKG"}}, "oauth_client": [], "api_key": [{"current_key": "AIzaSyDummyKey"}], "services": {"appinvite_service": {"other_platform_oauth_client": []}}}],
+            "configuration_version": "1"
+          }
+          EOF
           done
-      - name: Build APKs
+      - name: Build Customer
         run: |
-          for app in customer_app supplier_app admin_app; do
-            echo "Building $app"
-            cd $app
-            flutter pub get
-            flutter build appbundle --release --no-tree-shake-icons
-            cd ..
-          done
+          cd customer_app
+          flutter pub get
+          flutter build appbundle --release --no-tree-shake-icons
