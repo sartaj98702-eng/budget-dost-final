@@ -1,87 +1,63 @@
-// SUPPLIER APP - com.supplier.app - FULL CODE A2Z
-// Features: Easy Add, Unlimited Options, Photo+Price, Monthly 199, Commission 0, Sticker Lock, Delivery 40+50, COD Wallet 7 Day
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 void main() async { WidgetsFlutterBinding.ensureInitialized(); await Firebase.initializeApp(); runApp(SupplierApp()); }
+class SupplierApp extends StatelessWidget { @override Widget build(BuildContext context){ return MaterialApp(home: SupplierLogin(), debugShowCheckedModeBanner: false); } }
 
-class SupplierApp extends StatefulWidget { @override State<SupplierApp> createState()=>_SupplierAppState(); }
-class _SupplierAppState extends State<SupplierApp> {
-  late Razorpay rp; bool sub=false;
-  @override void initState(){ rp=Razorpay(); rp.on(Razorpay.EVENT_PAYMENT_SUCCESS, (r)=>setState(()=>sub=true)); super.initState(); }
-  @override Widget build(BuildContext c){
-    return MaterialApp(home: Scaffold(
-      appBar: AppBar(title: Text("Budget Dost Supplier - SR Hub"), backgroundColor: Colors.orange),
-      body: sub ? SupplierPanel() : Center(child: ElevatedButton(child: Text("Pay 199/month - Commission Zero"), onPressed: (){ rp.open({'key':'rzp_test_Tve76lZWuKemRw','amount':19900,'name':'Supplier Subscription'}); })),
-    ));
-  }
+class SupplierLogin extends StatefulWidget { @override _SupplierLoginState createState()=>_SupplierLoginState(); }
+class _SupplierLoginState extends State<SupplierLogin>{
+  final nameC=TextEditingController(); final shopC=TextEditingController(); final phoneC=TextEditingController(); final otpC=TextEditingController();
+  String verId=""; bool otpSent=false;
+  void sendOtp() async { await FirebaseAuth.instance.verifyPhoneNumber(phoneNumber:'+91${phoneC.text}', codeSent:(id,t){setState((){verId=id; otpSent=true;});}, verificationCompleted:(c){}, verificationFailed:(e){ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message!))); }, codeAutoRetrievalTimeout:(id){}); }
+  void verify() async { var cred=PhoneAuthProvider.credential(verificationId:verId, smsCode:otpC.text); await FirebaseAuth.instance.signInWithCredential(cred);
+    await FirebaseFirestore.instance.collection('suppliers').doc(FirebaseAuth.instance.currentUser!.uid).set({'supplierName':nameC.text,'shopName':shopC.text,'phone':phoneC.text,'subscription':199,'commission':0,'created':FieldValue.serverTimestamp()});
+    Navigator.pushReplacement(context, MaterialPageRoute(builder:(_)=>SupplierHome())); }
+  @override Widget build(BuildContext context){ return Scaffold(body: Padding(padding: EdgeInsets.all(20), child: Column(mainAxisAlignment: MainAxisAlignment.center, children:[
+    Text('Supplier Login', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), SizedBox(height: 20),
+    TextField(controller: nameC, decoration: InputDecoration(labelText: 'Supplier Name', border: OutlineInputBorder())),
+    SizedBox(height: 10), TextField(controller: shopC, decoration: InputDecoration(labelText: 'Shop Name', border: OutlineInputBorder())),
+    SizedBox(height: 10), TextField(controller: phoneC, decoration: InputDecoration(labelText: 'Number', prefixText: '+91 ', border: OutlineInputBorder())),
+    if(otpSent) Padding(padding: EdgeInsets.only(top:10), child: TextField(controller: otpC, decoration: InputDecoration(labelText: 'OTP', border: OutlineInputBorder()))),
+    SizedBox(height: 20), SizedBox(width: double.infinity, child: ElevatedButton(onPressed: otpSent?verify:sendOtp, child: Text(otpSent?'Verify & Login':'Send OTP'))),
+  ]))); }
 }
 
-class SupplierPanel extends StatelessWidget {
-  @override Widget build(BuildContext c){
-    return Column(children: [
-      ElevatedButton(onPressed: (){ Navigator.push(c, MaterialPageRoute(builder: (_)=>AddProductPage())); }, child: Text("Add Product - Unlimited Options")),
-      Expanded(child: StreamBuilder(stream: FirebaseFirestore.instance.collection('orders').snapshots(), builder: (cx,s){
-        if(!s.hasData) return CircularProgressIndicator();
-        return ListView.builder(itemCount: s.data!.docs.length, itemBuilder: (_,i){ return OrderCard(order: s.data!.docs[i].data(), id: s.data!.docs[i].id); });
-      }))
-    ]);
-  }
+class SupplierHome extends StatefulWidget { @override _SupplierHomeState createState()=>_SupplierHomeState(); }
+class _SupplierHomeState extends State<SupplierHome>{
+  bool stickerPrinted=false;
+  @override Widget build(BuildContext context){ return Scaffold(appBar: AppBar(title: Text('Supplier - Rs199/month, 0% Commission'), backgroundColor: Colors.orange), body: ListView(padding: EdgeInsets.all(12), children:[
+    Card(child: ListTile(title: Text('Add Product - Easy'), subtitle: Text('Photo + Price + GST - Unlimited options'), trailing: Icon(Icons.add), onTap:(){ Navigator.push(context, MaterialPageRoute(builder:(_)=>AddProduct())); })),
+    Card(child: ListTile(title: Text('Orders - Courier Delivery'), subtitle: Text('Sticker ke bina ship button nahi dabega'), onTap:(){})),
+    SizedBox(height: 10),
+    Container(padding: EdgeInsets.all(12), color: Colors.yellow.shade100, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
+      Text('Delivery Info:', style: TextStyle(fontWeight: FontWeight.bold)),
+      Text('Delivery Charge Rs90 (40+50). Extra tumhare jeb se jayega, 199 + customer 10 se adjust hoga. COD wallet me courier apna rakh kar baaki dega. Supplier ko 7 din baad paisa milega.'),
+      Text('Courier khud support ke paas ayega.'),
+      SizedBox(height: 10),
+      CheckboxListTile(title: Text('Maine Sticker Print Kiya - FROM: Budget Dost SR Warehouse (Supplier Hidden)'), value: stickerPrinted, onChanged: (v){setState((){stickerPrinted=v!;});}),
+      SizedBox(width: double.infinity, child: ElevatedButton(onPressed: stickerPrinted?(){ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Courier ko notify kiya - Support se contact karega'))); }:null, child: Text('Ready to Ship'))),
+    ])),
+  ])); }
 }
 
-class OrderCard extends StatefulWidget { final Map order; final String id; OrderCard({required this.order, required this.id}); @override State<OrderCard> createState()=>_OrderCardState(); }
-class _OrderCardState extends State<OrderCard> {
-  bool stickerDone=false;
-  Future<void> makeSticker() async {
-    final pdf=pw.Document();
-    pdf.addPage(pw.Page(build: (ct){
-      // KHALI TEMPLATE - AUTOMATIC BHAR JAYEGA - FAKE DATA NAHI
-      return pw.Column(children: [
-        pw.Text("Budget Dost SR Hub - SOURCE: SR Hub Code ${widget.order['supplierCode']} - Return to Hub, Delhi"),
-        pw.Divider(),
-        pw.Text("TO: ${widget.order['customerName']} - ${widget.order['address']} - Pin: ${widget.order['pincode']} - Phone: ${widget.order['phone']}"),
-        pw.Text("Order: ${widget.order['orderId']} | AWB: ${widget.order['awb']} | Amount: ${widget.order['amount']} | Payment: ${widget.order['paymentType']}"),
-        pw.BarcodeWidget(data: "${widget.order['orderId']}|SUP:${widget.order['supplierCode']}|AWB:${widget.order['awb']}", barcode: pw.Barcode.qrCode(), width: 100, height: 100),
-      ]);
-    }));
-    await Printing.layoutPdf(onLayout: (f)=>pdf.save());
-    setState(()=>stickerDone=true);
-    await FirebaseFirestore.instance.collection('orders').doc(widget.id).update({'stickerGenerated':true});
-  }
-  @override Widget build(BuildContext c){
-    return Card(child: ListTile(
-      title: Text("${widget.order['orderId']} - Rs.${widget.order['amount']} - ${widget.order['paymentType']}"),
-      subtitle: Text("Delivery: 40(Customer) + 50(Tumhara 199/10 fund se) = 90 Courier | 7 din baad paisa milega"),
-      trailing: Column(children: [
-        ElevatedButton(onPressed: makeSticker, child: Text("Download Sticker")),
-        ElevatedButton(
-          onPressed: stickerDone ? (){ FirebaseFirestore.instance.collection('orders').doc(widget.id).update({'status':'packed_for_courier'}); ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text("Courier ko Notify Kiya - Support ke paas ayega"))); } : null,
-          style: ElevatedButton.styleFrom(backgroundColor: stickerDone?Colors.green:Colors.grey),
-          child: Text(stickerDone ? "Mark Packed" : "Pehle Sticker Lo"),
-        ),
-      ]),
-    ));
-  }
-}
-
-class AddProductPage extends StatefulWidget { @override State<AddProductPage> createState()=>_AddProductPageState(); }
-class _AddProductPageState extends State<AddProductPage> {
-  TextEditingController name=TextEditingController(); TextEditingController price=TextEditingController(); TextEditingController pincode=TextEditingController();
-  List<TextEditingController> opts=[TextEditingController()];
-  @override Widget build(BuildContext c){
-    return Scaffold(appBar: AppBar(title: Text("Add Product - Unlimited")), body: SingleChildScrollView(child: Column(children: [
-      TextField(controller: name, decoration: InputDecoration(labelText: "Product Name - Koi bhi product daal sakte ho")),
-      TextField(controller: price, decoration: InputDecoration(labelText: "Price")),
-      TextField(controller: pincode, decoration: InputDecoration(labelText: "Pincode")),
-      Text("Custom Options - Unlimited - Add More se jitna chaahe add karo - Koi Limit Nahi"),
-      ...opts.map((e)=>TextField(controller: e, decoration: InputDecoration(labelText: "Option - Size/Color/Material"))).toList(),
-      ElevatedButton(onPressed: ()=>setState(()=>opts.add(TextEditingController())), child: Text("+ Add More Option")),
-      ElevatedButton(onPressed: () async { await FirebaseFirestore.instance.collection('products').add({'name':name.text,'price':double.parse(price.text),'pincode':pincode.text,'options':opts.map((e)=>e.text).toList(),'supplierId':'SUP123','supplierCode':'SR-102','approved':false,'createdAt':FieldValue.serverTimestamp()}); Navigator.pop(c); }, child: Text("Submit - Admin Approve Karega")),
-    ])));
-  }
+class AddProduct extends StatefulWidget { @override _AddProductState createState()=>_AddProductState(); }
+class _AddProductState extends State<AddProduct>{
+  final nameC=TextEditingController(); final priceC=TextEditingController(); final gstC=TextEditingController(text:'18'); final hsnC=TextEditingController();
+  Map<String, TextEditingController> custom={};
+  @override Widget build(BuildContext context){ return Scaffold(appBar: AppBar(title: Text('Product with GST')), body: Padding(padding: EdgeInsets.all(16), child: ListView(children:[
+    TextField(controller: nameC, decoration: InputDecoration(labelText: 'Product Name - Any Type')),
+    TextField(controller: priceC, decoration: InputDecoration(labelText: 'Base Price'), keyboardType: TextInputType.number),
+    TextField(controller: gstC, decoration: InputDecoration(labelText: 'GST % - 0,5,12,18,28')), 
+    TextField(controller: hsnC, decoration: InputDecoration(labelText: 'HSN Code')),
+    SizedBox(height: 15), Text('Unlimited Custom Options - Har tarah ka product', style: TextStyle(fontWeight: FontWeight.bold)),
+    ...custom.entries.map((e)=>Padding(padding: EdgeInsets.only(top:8), child: TextField(controller: e.value, decoration: InputDecoration(labelText: e.key, border: OutlineInputBorder())))).toList(),
+    TextButton(onPressed:(){ setState((){ custom['Option ${custom.length+1}']=TextEditingController(); }); }, child: Text('+ Add More Field - Unlimited')),
+    SizedBox(height: 20),
+    ElevatedButton(onPressed:() async {
+      await FirebaseFirestore.instance.collection('products').add({'name':nameC.text,'price':double.tryParse(priceC.text)??0,'gst':int.tryParse(gstC.text)??18,'hsn':hsnC.text,'supplierId':FirebaseAuth.instance.currentUser!.uid,'status':'pending','custom':custom.map((k,v)=>MapEntry(k,v.text)),'created':FieldValue.serverTimestamp()});
+      Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted for Admin Approval')));
+    }, child: Text('Submit Product')),
+  ]))); }
 }
