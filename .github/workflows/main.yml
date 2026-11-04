@@ -1,7 +1,5 @@
-name: Build All APKs
-
+name: Build
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,51 +12,17 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      
-      - name: Build Customer App
+      - name: Build APKs
         run: |
-          mkdir -p /tmp/bak_c
-          cp -r customer_app/lib/* /tmp/bak_c/ 2>/dev/null || true
-          flutter create --project-name customer_app customer_app
-          rm -rf customer_app/lib
-          mkdir -p customer_app/lib
-          cp -r /tmp/bak_c/* customer_app/lib/ 2>/dev/null || true
-          cd customer_app
-          flutter pub get
-          flutter build apk --release
-          cd ..
-
-      - name: Build Supplier App
-        run: |
-          mkdir -p /tmp/bak_s
-          cp -r supplier_app/lib/* /tmp/bak_s/ 2>/dev/null || true
-          flutter create --project-name supplier_app supplier_app
-          rm -rf supplier_app/lib
-          mkdir -p supplier_app/lib
-          cp -r /tmp/bak_s/* supplier_app/lib/ 2>/dev/null || true
-          cd supplier_app
-          flutter pub get
-          flutter build apk --release
-          cd ..
-
-      - name: Build Admin App
-        run: |
-          mkdir -p /tmp/bak_a
-          cp -r admin_app/lib/* /tmp/bak_a/ 2>/dev/null || true
-          flutter create --project-name admin_app admin_app
-          rm -rf admin_app/lib
-          mkdir -p admin_app/lib
-          cp -r /tmp/bak_a/* admin_app/lib/ 2>/dev/null || true
-          cd admin_app
-          flutter pub get
-          flutter build apk --release
-          cd ..
-
-      - name: Upload APKs
-        uses: actions/upload-artifact@v4
+          for app in customer_app supplier_app admin_app; do
+            cd $app
+            flutter create . --platforms=android
+            flutter build apk --release
+            cd ..
+            mkdir -p out
+            cp $app/build/app/outputs/flutter-apk/app-release.apk out/$app.apk
+          done
+      - uses: actions/upload-artifact@v4
         with:
-          name: all-apks
-          path: |
-            customer_app/build/app/outputs/flutter-apk/app-release.apk
-            supplier_app/build/app/outputs/flutter-apk/app-release.apk
-            admin_app/build/app/outputs/flutter-apk/app-release.apk
+          name: apks
+          path: out/
