@@ -15,8 +15,14 @@ jobs:
       - name: Build APKs
         run: |
           for app in customer_app supplier_app admin_app; do
+            echo "Building $app"
             cd $app
-            flutter create . --platforms=android
+            if [ ! -d android ]; then
+              flutter create /tmp/$app --platforms=android --project-name $app
+              cp -r /tmp/$app/android .
+              cp /tmp/$app/.metadata . 2>/dev/null || true
+            fi
+            flutter pub get
             flutter build apk --release
             cd ..
             mkdir -p out
