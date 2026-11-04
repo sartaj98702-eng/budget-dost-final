@@ -5,22 +5,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-          
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          
+      - name: Fix missing google-services
+        run: |
+          for app in customer_app supplier_app admin_app; do
+            mkdir -p $app/android/app
+            if [ ! -f $app/android/app/google-services.json ]; then
+              echo '{"project_info":{"project_number":"123","project_id":"dummy","storage_bucket":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:abc","android_client_info":{"package_name":"com.example"}},"oauth_client":[],"api_key":[{"current_key":"dummy"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}],"configuration_version":"1"}' > $app/android/app/google-services.json
+            fi
+          done
       - name: Build APKs
         run: |
           for app in customer_app supplier_app admin_app; do
             echo "Building $app"
             cd $app
             flutter pub get
-            flutter build appbundle --release
+            flutter build appbundle --release --no-tree-shake-icons
             cd ..
           done
