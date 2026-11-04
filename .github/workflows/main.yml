@@ -1,0 +1,26 @@
+name: Build APKs
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+      - run: cd customer_app && flutter pub get && flutter build apk --release
+      - run: cd supplier_app && flutter pub get && flutter build apk --release
+      - run: cd admin_app && flutter pub get && flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: All-APKs
+          path: |
+            customer_app/build/app/outputs/flutter-apk/app-release.apk
+            supplier_app/build/app/outputs/flutter-apk/app-release.apk
+            admin_app/build/app/outputs/flutter-apk/app-release.apk
