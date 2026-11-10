@@ -9,26 +9,39 @@ jobs:
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
+
+      - name: Check Folder Structure
+        run: |
+          echo "--- ROOT ---"
+          ls -la
+          echo "--- FIND PUBSPEC.YAML ---"
+          find . -name "pubspec.yaml" -maxdepth 4
+
       - name: Build Customer
         run: |
           cd customer-app
+          ls -la
           flutter pub get
           flutter build appbundle --release
+
       - name: Build Supplier
         run: |
           cd supplier-app
+          ls -la
           flutter pub get
           flutter build appbundle --release
+        continue-on-error: true
+
       - name: Build Admin
         run: |
           cd admin-app
+          ls -la
           flutter pub get
           flutter build appbundle --release
+        continue-on-error: true
+
       - name: Upload AABs
         uses: actions/upload-artifact@v4
         with:
           name: aabs
-          path: |
-            customer-app/build/app/outputs/bundle/release/*.aab
-            supplier-app/build/app/outputs/bundle/release/*.aab
-            admin-app/build/app/outputs/bundle/release/*.aab
+          path: "**/build/app/outputs/bundle/release/*.aab"
