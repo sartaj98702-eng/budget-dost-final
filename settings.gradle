@@ -1,0 +1,3 @@
+include ':admin-app:app'
+include ':customer-app:app'
+include ':supplier-app:app'
