@@ -10,32 +10,23 @@ jobs:
           flutter-version: '3.22.0'
           channel: 'stable'
 
-      - name: Build Customer App
+      - name: DEBUG - Show Real Folder Names
         run: |
-          echo "Finding customer-app..."
-          CUSTOMER_DIR=$(find customer-app -name "pubspec.yaml" | head -1 | xargs dirname)
-          echo "Found at: $CUSTOMER_DIR"
-          cd $CUSTOMER_DIR
-          flutter pub get
-          flutter build appbundle --release
+          echo "--- ROOT FOLDER LIST ---"
+          ls -la
+          echo "--- ALL PUBSPEC.YAML FILES ---"
+          find . -name "pubspec.yaml" -maxdepth 5
 
-      - name: Build Supplier App
+      - name: Build All Apps Found
         run: |
-          echo "Finding supplier-app..."
-          SUPPLIER_DIR=$(find supplier-app -name "pubspec.yaml" | head -1 | xargs dirname)
-          echo "Found at: $SUPPLIER_DIR"
-          cd $SUPPLIER_DIR
-          flutter pub get
-          flutter build appbundle --release
-
-      - name: Build Admin App
-        run: |
-          echo "Finding admin-app..."
-          ADMIN_DIR=$(find admin-app -name "pubspec.yaml" | head -1 | xargs dirname)
-          echo "Found at: $ADMIN_DIR"
-          cd $ADMIN_DIR
-          flutter pub get
-          flutter build appbundle --release
+          for PUB in $(find . -name "pubspec.yaml"); do
+            DIR=$(dirname "$PUB")
+            echo "========== Building in $DIR =========="
+            cd "$DIR"
+            flutter pub get
+            flutter build appbundle --release
+            cd -
+          done
 
       - name: Upload AABs
         uses: actions/upload-artifact@v4
