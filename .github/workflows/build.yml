@@ -17,23 +17,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.5
 
       - name: Build Admin AAB
-        run: ./gradlew :admin-app:bundleRelease
+        run: gradle :admin-app:app:bundleRelease
 
       - name: Build Customer AAB
-        run: ./gradlew :customer-app:bundleRelease
+        run: gradle :customer-app:app:bundleRelease
 
       - name: Build Supplier AAB
-        run: ./gradlew :supplier-app:bundleRelease
+        run: gradle :supplier-app:app:bundleRelease
 
       - name: Upload All AABs
         uses: actions/upload-artifact@v4
         with:
           name: all-aabs
           path: |
-            admin-app/build/outputs/bundle/release/*.aab
-            customer-app/build/outputs/bundle/release/*.aab
-            supplier-app/build/outputs/bundle/release/*.aab
+            admin-app/app/build/outputs/bundle/release/*.aab
+            customer-app/app/build/outputs/bundle/release/*.aab
+            supplier-app/app/build/outputs/bundle/release/*.aab
