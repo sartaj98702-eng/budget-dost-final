@@ -9,12 +9,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug Structure
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build Admin AAB
         run: |
-          echo "=== PWD ==="
-          pwd
-          ls -la
-          echo "=== All files ==="
-          find . -type f | head -n 100
-          echo "=== Searching pubspec ==="
-          find . -iname "pubspec*"
+          cd admin-app
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+      - name: Build Customer AAB
+        run: |
+          cd customer-app
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+      - name: Build Supplier AAB
+        run: |
+          cd supplier-app
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+      - name: Upload All AABs
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-aabs
+          path: |
+            admin-app/app/build/outputs/bundle/release/*.aab
+            customer-app/app/build/outputs/bundle/release/*.aab
+            supplier-app/app/build/outputs/bundle/release/*.aab
