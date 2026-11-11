@@ -1,35 +1,38 @@
-name: Build
-on: [push]
+name: Build AABs
+on:
+  push:
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          flutter-version: '3.22.0'
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
           channel: 'stable'
 
-      - name: DEBUG - Show Real Folder Names
-        run: |
-          echo "--- ROOT FOLDER LIST ---"
-          ls -la
-          echo "--- ALL PUBSPEC.YAML FILES ---"
-          find . -name "pubspec.yaml" -maxdepth 5
-
-      - name: Build All Apps Found
+      - name: Build All App Bundles
         run: |
           for PUB in $(find . -name "pubspec.yaml"); do
             DIR=$(dirname "$PUB")
-            echo "========== Building in $DIR =========="
+            echo "==== Building $DIR ===="
             cd "$DIR"
             flutter pub get
             flutter build appbundle --release
-            cd -
+            cd $GITHUB_WORKSPACE
           done
 
       - name: Upload AABs
         uses: actions/upload-artifact@v4
         with:
-          name: aabs
+          name: all-aabs
           path: "**/build/app/outputs/bundle/release/*.aab"
