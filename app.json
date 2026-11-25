@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Budget Dost",
+    "slug": "budgetdost-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "budgetdost",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B3D91"
+    },
+    "android": {
+      "package": "com.budgetdost",
+      "versionCode": 1
+    },
+    "ios": {
+      "bundleIdentifier": "com.budgetdost"
+    }
+  }
+}
