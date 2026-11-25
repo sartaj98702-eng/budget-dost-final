@@ -1,0 +1,21 @@
+{
+  "name": "budgetdost-customer",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~51.0.0",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.2",
+    "firebase": "10.12.2",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "expo-linking": "~6.3.1"
+  },
+  "private": true
+}
