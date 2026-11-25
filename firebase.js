@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "TUMHARI_API_KEY_YAHA",
+  apiKey: "AIzaSyAwQfWx3XZMyAz_CS0vA6_G8rmtkX1G_uw,
   authDomain: "budgetdost-1f63c.firebaseapp.com",
   projectId: "budgetdost-1f63c",
   storageBucket: "budgetdost-1f63c.firebasestorage.app",
